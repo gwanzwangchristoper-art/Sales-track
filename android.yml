@@ -1,0 +1,40 @@
+name: Build Android APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack project
+        run: |
+          f=$(ls *.tar.gz *.tgz *.tar *.zip 2>/dev/null | head -n1)
+          if [ -z "$f" ]; then echo "No project archive found in the repo"; exit 1; fi
+          echo "Archive: $f"
+          mkdir unpacked
+          case "$f" in *.zip) unzip -q "$f" -d unpacked ;; *) tar -xf "$f" -C unpacked ;; esac
+          dir=$(dirname "$(find unpacked -maxdepth 3 -name package.json -not -path '*/node_modules/*' | head -n1)")
+          echo "App folder: $dir"
+          echo "APP_DIR=$dir" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm install
+        working-directory: ${{ env.APP_DIR }}
+      - run: npx cap add android
+        working-directory: ${{ env.APP_DIR }}
+      - run: npm run android:patch
+        working-directory: ${{ env.APP_DIR }}
+      - run: npm run sync
+        working-directory: ${{ env.APP_DIR }}
+      - run: chmod +x gradlew && ./gradlew assembleDebug
+        working-directory: ${{ env.APP_DIR }}/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sales-track-apk
+          path: ${{ env.APP_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk
