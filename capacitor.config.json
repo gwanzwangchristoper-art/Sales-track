@@ -1,0 +1,16 @@
+{
+  "appId": "com.salestrack.calculator",
+  "appName": "Sales Track Calculator",
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorSQLite": {
+      "androidIsEncryption": true
+    }
+  },
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
